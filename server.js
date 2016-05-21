@@ -87,15 +87,13 @@ io.on('connection', function (socket) {
 	});
 
 	socket.on('game:change', function (data) {
-		var newBlob;
-		blobs = blobs.update(data.blobId, function (blob) {
-			blob.setX(data.x);
-			blob.setY(data.y);
-			newBlob = blob;
+		blobs = blobs.update(data.id, function (blob) {
+			blob.setX(data.position.x);
+			blob.setY(data.position.y);
 			return blob;
 		});
 
-		io.emit('game:change-blob', {type: Constants.BLOB, blob: newBlob});
+		socket.broadcast.emit('game:change-blob', data);
 	});
 });
 
