@@ -4,7 +4,13 @@
   "description": "",
   "main": "server.js",
   "dependencies": {
-    "immutable": "^3.8.1"
+    "body-parser": "^1.15.1",
+    "express": "^4.13.4",
+    "http": "0.0.0",
+    "immutable": "^3.8.1",
+    "morgan": "^1.7.0",
+    "node-sass-middleware": "^0.9.8",
+    "socket.io": "^1.4.6"
   },
   "devDependencies": {},
   "scripts": {
