@@ -1,0 +1,21 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>Intelligario</title>
+        <link href="css/main.css" rel="stylesheet" />
+        <script src="js/jquery.min.js" type="text/javascript"></script>
+        <script src="js/fabric.min.js" type="text/javascript"></script>
+        <script src="js/main.js" type="text/javascript"></script>
+    </head>
+    <body>
+        <canvas id="game"></canvas>
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+        var socket = io('http://localhost');
+        socket.on('news', function (data) {
+            console.log(data);
+            socket.emit('my other event', { my: 'data' });
+        });
+        </script>
+    </body>
+</html>
