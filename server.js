@@ -47,8 +47,16 @@ var SpikeTimer = new Timer(2000, function () {
 		var newY = Math.random() * 1000;
 		data.push({spike: spike, newX: newX, newY: newY});
 	});
+	
+	for (var i = 0; i < data.length; i++) {
+		spikes = spikes.updateIn([data[i].spike.getId()], function (spike) {
+			spike.setX(data[i].newX);
+			spike.setY(data[i].newY);
+			return spike;
+		});
+	}
 
-	io.sockets.emit('game:change-spike', {data: data});
+	io.sockets.emit('game:change-spikes', {data: data});
 });
 
 SpikeTimer.start();
