@@ -55,6 +55,7 @@ function init(name){
         objects.blobs[id] = blobData;
     }
     function die(){
+        alert();
         clearInterval(mInt);
         clearInterval(fInt);
         clearInterval(sInt);
@@ -246,7 +247,7 @@ function init(name){
     var winWidth = $(window).width();
     var winHeight = $(window).height();
     var sInt = setInterval(function(){
-        if(myBlob == null) return;
+        if(myBlob == null || objects.blobs[myBlob] == null) return;
         var curBlob = objects.blobs[myBlob];
         socket.emit('game:change', {
             id: curBlob.id,
@@ -342,7 +343,8 @@ function init(name){
       myBlob = data.id;
     });
     socket.on('game:remove-blob', function (data) {
-        console.warn("remove blob");
+       console.warn("remove blob");
+       console.log(data);
         if(data.attrs.id == myBlob){
             die();
             return;
