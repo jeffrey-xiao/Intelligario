@@ -120,7 +120,26 @@ function init(name){
                         var dy = eatBlob.position.y - curBlob.position.y;
                         var dist = Math.sqrt(dx*dx + dy*dy);
                         if(dist <= Math.max(eatBlob.radius, curBlob.radius)){
-                            if(curBlob.radius > eatBlob.radius + 1){
+                            if(eatBlob.radius > curBlob.radius + 1){
+                                socket.emit('game:remove', {id: curBlob.id});
+                                eatBlob.radius = Math.sqrt((eatBlob.radius * eatBlob.radius)+(curBlob.radius*curBlob.radius));
+                                socket.emit('game:change', {
+                                    id: eatBlob.id,
+                                    position: eatBlob.position, 
+                                    radius: eatBlob.radius, 
+                                    step: eatBlob.step, 
+                                    stepCount: eatBlob.stepCount, 
+                                    steps: eatBlob.steps, 
+                                    dest: eatBlob.dest, 
+                                    next: eatBlob.next,
+                                    name: curBlob.name
+                                });
+                                objects.blobs[curBlob.id].blob.remove();
+                                objects.blobs[curBlob.id].text.remove();
+                                delete objects.blobs[curBlob.id];
+                                term = true;
+                                return;
+                            }/*else if(curBlob.radius > eatBlob.radius + 1){
                                 socket.emit('game:remove', {id: eatBlob.id});
                                 curBlob.radius = Math.sqrt((curBlob.radius * curBlob.radius)+(eatBlob.radius*eatBlob.radius));
                                 socket.emit('game:change', {
@@ -139,7 +158,7 @@ function init(name){
                                 objects.blobs[curBlob.id].text.remove();
                                 delete objects.blobs[eatBlob.id];
                                 return;
-                            }
+                            }*/
                         }
                     } 
                 });
@@ -324,6 +343,10 @@ function init(name){
     });
     socket.on('game:remove-blob', function (data) {
         console.warn("remove blob");
+        if(data.attrs.id == myBlob){
+            die();
+            return;
+        }
       if(data.attrs.id in objects.blobs){
         objects.blobs[data.attrs.id].blob.remove();
         objects.blobs[data.attrs.id].text.remove();
