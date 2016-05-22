@@ -5,7 +5,6 @@ self.addEventListener('message', function(e){
     var data = JSON.parse(e.data);
     var sums = [0, 0];
     var currBlob = data.objects.blobs[data.myBlob];
-    console.log(_.extend({}, currBlob.position));
     if(currBlob == null) return;
     _.each(data.objects.blobs, function(blob){
         if(blob == null) return;
@@ -50,8 +49,8 @@ self.addEventListener('message', function(e){
         }
     });
     var roundedPositions = {
-        x: Math.round(currBlob.position.x),  
-        y: Math.round(currBlob.position.y)
+        x: Math.floor(currBlob.position.x),  
+        y: Math.floor(currBlob.position.y)
     };
     pq.queue({x: roundedPositions.x, y: roundedPositions.y, cost: 0});
     cost[roundedPositions.x][roundedPositions.y] = 0;
@@ -60,16 +59,19 @@ self.addEventListener('message', function(e){
     var endY = -1;
     var cnt = 0;
     var bId = null;
+    var vis = [];
     while(pq.length){
         var curr = pq.dequeue();
         cnt++;
         if (cost[curr.x][curr.y] < curr.cost)
             continue;
         
+        vis.push({x: curr.x, y: curr.y});
+        
         var found = false;
         var count = 0;
         _.each(data.objects.blobs, function (blob) {
-            if (Math.round(blob.position.x) == curr.x && Math.round(blob.position.y) == curr.y && blob.radius + 1 < currBlob.radius && blob.id != currBlob.id) {
+            if (Math.floor(blob.position.x) == curr.x && Math.floor(blob.position.y) == curr.y && blob.radius + 1 < currBlob.radius && blob.id != currBlob.id) {
                 bId = blob.id;
                 found = true;
                 endX = curr.x;
@@ -129,6 +131,8 @@ self.addEventListener('message', function(e){
         }
     }
     if(bId == null){
+        console.log(data.objects.blobs);
+        console.log(vis);
         self.postMessage("[]");
         return;
     }
@@ -156,6 +160,5 @@ self.addEventListener('message', function(e){
         realRet = ret;
     }
     realRet.push(ret[ret.length-1]);
-    delete visited;
     self.postMessage(JSON.stringify(realRet));
 });

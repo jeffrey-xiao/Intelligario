@@ -109,6 +109,9 @@ io.on('connection', function (socket) {
 		socket.emit('game:set-id', {id: socket.id});
 		var myList = blobs.toArray();
 		socket.emit('game:add-objects', myList);
+		var foodArray = food.toArray();
+		
+		socket.emit('game:add-objects', foodArray);
 	});
 	
 	socket.on('game:remove', function (data) {

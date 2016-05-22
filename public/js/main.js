@@ -201,7 +201,7 @@ function init(name){
             return pix(pos - camera.y) + win.height/2;
         }
         var lastPos = objects.paths[0];
-        for(var i = 1; i < objects.paths.length; i++){
+        for(var i = 0; i < objects.paths.length; i++){
             var line = objects.paths[i].line.set({x1: calcX(objects.paths[i].start.x), y1: calcY(objects.paths[i].start.y), x2: calcX(objects.paths[i].end.x), y2: calcY(objects.paths[i].end.y)});
             objects.paths[i].line.setCoords();
             lastPos = objects.blobs[myBlob].next[i];
