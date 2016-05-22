@@ -73,11 +73,8 @@ var BlobTimer = new Timer(10000, function () {
 	}
 	
 	var foodArray = food.toArray();
-	foodArray.forEach(function (food) {
-		data.push(food);
-	});
 	
-	io.sockets.emit('game:change-food', data);
+	io.sockets.emit('game:add-objects', foodArray);
 });
 
 SpikeTimer.start();
