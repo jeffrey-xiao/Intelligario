@@ -66,7 +66,7 @@ function init(name){
         delete objects;
     }
     function render(){
-        if(myBlob == null) return;
+        if(myBlob == null || objects.blobs[myBlob] == null) return;
         var camera = objects.blobs[myBlob].position;
         var pix1 = pix(1);
         var top = pix(camera.y) % pix1;
