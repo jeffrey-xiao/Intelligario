@@ -4,7 +4,8 @@ var opts = {
     horCount: 500,
     fps: 60,
     speedFactor: 70,
-    spikeTime: 2
+    spikeTime: 2,
+    sendInterval: 2000
 };
 function init(){
     var win = {
@@ -91,6 +92,20 @@ function init(){
     }
     var winWidth = $(window).width();
     var winHeight = $(window).height();
+    setInterval(function(){
+        if(myBlob == null) return;
+        var curBlob = objects.blobs[myBlob];
+        socket.emit('game:change', {
+            id: curBlob.id,
+            position: curBlob.position, 
+            radius: curBlob.radius, 
+            step: curBlob.step, 
+            stepCount: curBlob.stepCount, 
+            steps: curBlob.steps, 
+            dest: curBlob.dest, 
+            next: curBlob.next
+        });
+    }, opts.sendInterval);
     setInterval(render, 1000/opts.fps);
     fabric.Object.prototype.transparentCorners = false;
     $(window).resize(function(){
