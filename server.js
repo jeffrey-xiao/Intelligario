@@ -130,5 +130,6 @@ io.on('connection', function (socket) {
 
 app.use('/', express.static(__dirname + '/public/'));
 
-http.listen(app.get('port'), hostname, function () {
+http.listen(app.get('port'), function () {
+  console.log('Node app is running on port', app.get('port'));
 });
