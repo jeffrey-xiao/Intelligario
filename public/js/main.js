@@ -136,6 +136,7 @@ function init(name){
                                 });
                                 objects.blobs[curBlob.id].blob.remove();
                                 objects.blobs[curBlob.id].text.remove();
+                                die();
                                 delete objects.blobs[curBlob.id];
                                 term = true;
                                 return;
@@ -153,7 +154,6 @@ function init(name){
                                     dest: curBlob.dest,  
                                     next: curBlob.next
                                 });
-                                die();
                                 objects.blobs[eatBlob.id].blob.remove();
                                 objects.blobs[curBlob.id].text.remove();
                                 delete objects.blobs[eatBlob.id];
