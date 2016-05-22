@@ -1,7 +1,7 @@
 var opts = {
     height: 250,
     width: 250,
-    horCount: 100,
+    horCount: 170,
     fps: 60,
     speedFactor: 90,
     spikeTime: 2,
