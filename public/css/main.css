@@ -26,6 +26,13 @@ body, html, canvas#game{
     width:100%;
     margin-top:-200px;
 }
+#slider{
+    position:absolute;
+    display:none;
+    bottom:20px;
+    right:20px;
+    z-index:100;
+}
 #splash h1, #end h1{
     color:#CCC;
     font-family: Lato;
@@ -36,7 +43,7 @@ body, html, canvas#game{
 #end{
     display:none;
 }
-#end p{
+p{
     margin:3em;
     font-family: lato;
     text-align:center;

@@ -61,6 +61,7 @@ function init(name){
         canvas.clear();
         $('#game').hide();
         $('#end').show();
+        $('#slider').hide();
         $('#score').text(Math.round(objects.blobs[myBlob].radius*100)/100);
         delete objects;
     }
@@ -266,6 +267,10 @@ function init(name){
                 blob.radius = Math.max(5, blob.radius * opts.massDecayConstant); 
         });
     }
+    $('#slider').change(function(){
+        opts.minDist = 10 - $(this).val()/2; 
+        opts.speedFactor = 100 + 5*($(this).val() - 10);
+    });
     var mInt = setInterval(massDecay, opts.massDecayInterval);
     fabric.Object.prototype.transparentCorners = false;
     var ballsTriggered = false;
@@ -349,6 +354,7 @@ function init(name){
 $(function(){
     $('#start-button').click(function(){
        $('#splash').hide();
+       $('#slider').show();
        init($('#name-input').val()); 
     });
 });
