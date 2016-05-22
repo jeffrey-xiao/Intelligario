@@ -3,9 +3,9 @@ importScripts('priority-queue.min.js');
 self.addEventListener('message', function(e){
     
     var data = JSON.parse(e.data);
-    
     var sums = [0, 0];
     var currBlob = data.objects.blobs[data.myBlob];
+    console.log(_.extend({}, currBlob.position));
     if(currBlob == null) return;
     _.each(data.objects.blobs, function(blob){
         if(blob == null) return;
