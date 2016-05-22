@@ -113,7 +113,7 @@ self.addEventListener('message', function(e){
                 _.each(data.objects.blobs, function(blob){
                     var dx = (blob.position.x - next.x);
                     var dy = (blob.position.y - next.y);
-                    if (blob.radius > currBlob.radius && Math.sqrt(dx * dx + dy * dy) - blob.radius - currBlob.radius <= data.opts.minDist) {
+                    if (blob.radius > currBlob.radius + 1 && Math.sqrt(dx * dx + dy * dy) - blob.radius - currBlob.radius <= data.opts.minDist) {
                         valid = false;
                         return;
                     }

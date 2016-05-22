@@ -1,7 +1,7 @@
 var opts = {
     height: 250,
     width: 250,
-    horCount: 100,
+    horCount: 250,
     fps: 60,
     speedFactor: 90,
     spikeTime: 2,
@@ -39,9 +39,6 @@ function init(name){
     }
     function createBlob(id, blobData){
         if(id in objects.blobs){
-            console.error('Object in blob');
-            console.log(objects.blobs);
-            console.log(blobData);
             return;
         }
         blobData.blob = new fabric.Circle({
@@ -125,7 +122,7 @@ function init(name){
                         var dy = eatBlob.position.y - curBlob.position.y;
                         var dist = Math.sqrt(dx*dx + dy*dy);
                         if(dist <= Math.max(eatBlob.radius, curBlob.radius)){
-                            if(eatBlob.radius > curBlob.radius + 1){
+                           /*if(eatBlob.radius > curBlob.radius + 1){
                                 socket.emit('game:remove', {id: curBlob.id});
                                 eatBlob.radius = Math.sqrt((eatBlob.radius * eatBlob.radius)+(curBlob.radius*curBlob.radius));
                                 socket.emit('game:change', {
@@ -137,14 +134,16 @@ function init(name){
                                     steps: eatBlob.steps, 
                                     dest: eatBlob.dest, 
                                     next: eatBlob.next,
-                                    name: curBlob.name
+                                    name: eatBlob.name,
+                                    color: eatBlob.color
                                 });
                                 objects.blobs[curBlob.id].blob.remove();
                                 objects.blobs[curBlob.id].text.remove();
                                 delete objects.blobs[curBlob.id];
                                 term = true;
                                 return;
-                            }/*else if(curBlob.radius > eatBlob.radius + 1){
+                            }else*/ 
+                            if(curBlob.radius > eatBlob.radius + 1){
                                 socket.emit('game:remove', {id: eatBlob.id});
                                 curBlob.radius = Math.sqrt((curBlob.radius * curBlob.radius)+(eatBlob.radius*eatBlob.radius));
                                 socket.emit('game:change', {
@@ -155,15 +154,15 @@ function init(name){
                                     stepCount: curBlob.stepCount, 
                                     steps: curBlob.steps, 
                                     name: curBlob.name,
+                                    color: curBlob.color,
                                     dest: curBlob.dest,  
                                     next: curBlob.next
                                 });
-                                die();
                                 objects.blobs[eatBlob.id].blob.remove();
-                                objects.blobs[curBlob.id].text.remove();
+                                objects.blobs[eatBlob.id].text.remove();
                                 delete objects.blobs[eatBlob.id];
                                 return;
-                            }*/
+                            }
                         }
                     } 
                 });
@@ -346,7 +345,7 @@ function init(name){
     });
     socket.on('game:set-id', function (data) {
         console.warn("set id");
-      myBlob = data.id;
+        myBlob = data.id;
     });
     socket.on('game:remove-blob', function (data) {
        console.warn("remove blob");
