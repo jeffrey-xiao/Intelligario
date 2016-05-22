@@ -19,6 +19,20 @@ body, html, canvas#game{
 #score{
     font-weight:bold;
 }
+#scoreboard{
+	position:fixed;
+	right:0px;
+	top:0px;
+	padding:2em;
+	font-size:1.3em;
+	background:rgba(0,0,0,0.5);
+	color:#FFF;
+	box-sizing:border-box;
+	z-index:200;	
+	font-family:Lato;
+	font-weight:400;
+	text-align:left;
+}
 #splash-center, #end-center{
     position:absolute;
     top:50%;

@@ -253,6 +253,23 @@ function init(name){
     var sInt = setInterval(function(){
         if(myBlob == null || objects.blobs[myBlob] == null) return;
         var curBlob = objects.blobs[myBlob];
+		var realBlobs = [];
+		_.each(objects.blobs, function(blob){
+			console.log(blob);
+			if(blob.radius > 3){
+				realBlobs.push({score: Math.round(blob.radius*100)/100, name: blob.name});
+			}
+		});
+		realBlobs.sort(function(a,b) {
+			return (a.score < b.score) ? 1 : ((b.score < a.score) ? -1 : 0);
+		}); 
+		var text = "";
+		for(var i = 0; i < realBlobs.length; i++){
+			if(i > 9) break;
+			text += (i+1)+". "+realBlobs[i].name+" | "+realBlobs[i].score+"<br/>";
+		}
+		text += "<br/><br/>Total Players: "+realBlobs.length;
+		$('#scoreboard-text').html(text);
         socket.emit('game:change', {
             id: curBlob.id,
             color: curBlob.color,
