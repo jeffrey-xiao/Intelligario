@@ -38,7 +38,12 @@ function init(name){
         return Math.round(pos*($(window).width()/opts.horCount));
     }
     function createBlob(id, blobData){
-        if(id in objects.blobs) return;
+        if(id in objects.blobs){
+            console.error('Object in blob');
+            console.log(objects.blobs);
+            console.log(blobData);
+            return;
+        }
         blobData.blob = new fabric.Circle({
             fill: blobData.color,    
             radius: blobData.radius
@@ -176,6 +181,7 @@ function init(name){
                             id: curBlob.id,
                             position: curBlob.position, 
                             radius: curBlob.radius, 
+                            color: curBlob.color, 
                             step: curBlob.step, 
                             stepCount: curBlob.stepCount,
                             name: curBlob.name, 
@@ -250,6 +256,7 @@ function init(name){
         var curBlob = objects.blobs[myBlob];
         socket.emit('game:change', {
             id: curBlob.id,
+            color: curBlob.color,
             position: curBlob.position, 
             radius: curBlob.radius, 
             step: curBlob.step, 
@@ -343,7 +350,6 @@ function init(name){
     });
     socket.on('game:remove-blob', function (data) {
        console.warn("remove blob");
-       console.log(data);
         if(data.attrs.id == myBlob){
             die();
             return;
