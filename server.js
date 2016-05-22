@@ -30,14 +30,15 @@ app.use(morgan('dev'));
 
 var spikes = Map();
 var blobs = Map();
+var food = Map();
 
 var spikeId = 0;
-var blobId = 0;
+var foodId = 0;
 
 for (var i = 0; i < Constants.NUM_OF_SPIKES; i++) {
-	var x = Math.random() * (grid.width-20) + 10;
-	var y = Math.random() * (grid.height-20) + 10;
-	spikes = spikes.set(spikeId, new Point({id: spikeId, position: {x:x, y:y}, radius: 2.5}));
+	var x = Math.random() * (grid.width - 2 * Constants.SPIKE_RADIUS) + Constants.SPIKE_RADIUS;
+	var y = Math.random() * (grid.height - 2 * Constants.SPIKE_RADIUS) + Constants.SPIKE_RADIUS;
+	spikes = spikes.set(spikeId, new Point({id: spikeId, position: {x:x, y:y}, radius: Constants.SPIKE_RADIUS}));
 	spikeId++;
 }
 
@@ -60,7 +61,23 @@ var SpikeTimer = new Timer(2000, function () {
 			return spike;
 		});
 	}
+});
 
+var BlobTimer = new Timer(10000, function () {
+	var data = [];
+	for (var i = 0; i < Constants.NUM_OF_FOOD; i++) {
+		var x = Math.random() * (grid.width - 2 * Constants.FOOD_RADIUS) + Constants.FOOD_RADIUS;
+		var y = Math.random() * (grid.height - 2 * Constants.FOOD_RADIUS) + Constants.FOOD_RADIUS;
+		food = food.set(foodId, new Point({id: foodId, position: {x:x, y:y}, radius: Constants.FOOD_RADIUS, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x:x, y:y}, next: []}));
+		foodId++;
+	}
+	
+	var foodArray = food.toArray();
+	foodArray.forEach(function (food) {
+		data.push(food);
+	});
+	
+	io.sockets.emit('game:change-food', data);
 });
 
 SpikeTimer.start();
