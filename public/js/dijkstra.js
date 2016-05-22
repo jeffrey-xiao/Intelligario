@@ -6,6 +6,7 @@ self.addEventListener('message', function(e){
     
     var sums = [0, 0];
     var currBlob = data.objects.blobs[data.myBlob];
+    if(currBlob == null) return;
     _.each(data.objects.blobs, function(blob){
         if(blob == null) return;
         if(blob.id == currBlob.id || blob.radius < currBlob.radius+1) return;
