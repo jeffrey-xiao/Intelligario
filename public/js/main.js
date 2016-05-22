@@ -1,7 +1,7 @@
 var opts = {
     height: 250,
     width: 250,
-    horCount: 250,
+    horCount: 100,
     fps: 60,
     speedFactor: 90,
     spikeTime: 2,
@@ -366,5 +366,10 @@ $(function(){
        $('#splash').hide();
        $('#slider').show();
        init($('#name-input').val()); 
+    });
+    $('#name-input').keyup(function(e){
+       if(event.keyCode == 13){
+           $('#start-button').trigger('click');
+       } 
     });
 });
