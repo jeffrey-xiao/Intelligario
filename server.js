@@ -102,7 +102,7 @@ io.on('connection', function (socket) {
 		var x = Math.round(Math.random() * (grid.width-2*Constants.BLOB_RADIUS) + Constants.BLOB_RADIUS);
 		var y = Math.round(Math.random() * (grid.height-2*Constants.BLOB_RADIUS) + Constants.BLOB_RADIUS);
 		var radius = Constants.BLOB_RADIUS;
-		var newBlob = new Point({id: socket.id, name: name, position: {x:x, y:y}, color: randColor(), radius:radius, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x:x, y:y}, next: []});
+		var newBlob = new Point({id: socket.id, name: data.name, position: {x:x, y:y}, color: randColor(), radius:radius, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x:x, y:y}, next: []});
 		blobs = blobs.set(socket.id, newBlob);
 		socket.broadcast.emit('game:add-object', newBlob);
 		socket.emit('game:set-id', {id: socket.id});

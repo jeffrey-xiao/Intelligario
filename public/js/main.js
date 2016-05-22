@@ -20,6 +20,14 @@ function init(name){
     var socket = io('/');
     var myBlob = null;
     var canvas = new fabric.StaticCanvas('game');
+    var scoreboard = new fabric.Text('Score', {
+        fill: 'black',
+        left: 20,
+        fontFamily: 'Lato',
+        fontWeight: 'bold',
+        fontSize: 25
+    });
+    canvas.add(scoreboard);
     var objects = {
         blobs: {}, //{id, blob, position: {x, y}, radius, step: {x, y}, stepCount, steps, dest: {x, y}, next: [{x, y},{x, y}]}
         spikes: {}, //{id, spike, position: {x, y}
@@ -35,9 +43,26 @@ function init(name){
             fill: blobData.color,    
             radius: blobData.radius
         });
+        blobData.text = new fabric.Text(blobData.name, {
+            fill: 'white',
+            fontFamily: 'Lato',
+            fontSize: 25
+        });
         canvas.add(blobData.blob);
+        canvas.add(blobData.text);
         blobData.blob.moveTo(1000);
+        blobData.text.moveTo(2000);
         objects.blobs[id] = blobData;
+    }
+    function die(){
+        clearInterval(mInt);
+        clearInterval(fInt);
+        clearInterval(sInt);
+        canvas.clear();
+        $('#game').hide();
+        $('#end').show();
+        $('#score').text(Math.round(objects.blobs[myBlob].radius*100)/100);
+        delete objects;
     }
     function render(){
         if(myBlob == null) return;
@@ -55,12 +80,15 @@ function init(name){
           objects.vLines[i].set({x1: l, x2: l});
           objects.vLines[i].setCoords();
         }
+        scoreboard.setText("" + Math.round(objects.blobs[myBlob].radius*100)/100);
         var term = false;
         _.each(objects.blobs, function(curBlob){
             if(curBlob == null) return;
             curBlob.blob.setRadius(pix(curBlob.radius));
             curBlob.blob.setLeft(pix(curBlob.position.x - curBlob.radius - camera.x) + win.width/2);
             curBlob.blob.setTop(pix(curBlob.position.y - curBlob.radius - camera.y) + win.height/2);
+            curBlob.text.setLeft(pix(curBlob.position.x - curBlob.text.getWidth()/2/pix1 - camera.x) + win.width/2);
+            curBlob.text.setTop(pix(curBlob.position.y - curBlob.text.getHeight()/2/pix1 - camera.y) + win.height/2);
             curBlob.stepCount++;
             if(curBlob.id == myBlob){ //check spikes
                 _.each(objects.spikes, function(spike){
@@ -71,6 +99,8 @@ function init(name){
                     if(dist <= Math.max(spike.radius, curBlob.radius)){
                         socket.emit('game:remove', {id: curBlob.id});
                         objects.blobs[curBlob.id].blob.remove();
+                        objects.blobs[curBlob.id].text.remove();
+                        die();
                         delete objects.blobs[curBlob.id];
                         term = true;
                         return;
@@ -104,6 +134,7 @@ function init(name){
                                     name: curBlob.name
                                 });
                                 objects.blobs[curBlob.id].blob.remove();
+                                objects.blobs[curBlob.id].text.remove();
                                 delete objects.blobs[curBlob.id];
                                 term = true;
                                 return;
@@ -118,10 +149,12 @@ function init(name){
                                     stepCount: curBlob.stepCount, 
                                     steps: curBlob.steps, 
                                     name: curBlob.name,
-                                    dest: curBlob.dest, 
+                                    dest: curBlob.dest,  
                                     next: curBlob.next
                                 });
+                                die();
                                 objects.blobs[eatBlob.id].blob.remove();
+                                objects.blobs[curBlob.id].text.remove();
                                 delete objects.blobs[eatBlob.id];
                                 return;
                             }
@@ -196,8 +229,9 @@ function init(name){
             objects.paths = [];
             lastPos = objects.blobs[myBlob].position;
             for(var i = 0; i < objects.blobs[myBlob].next.length; i++){
-                var line = new fabric.Line([calcX(lastPos.x), calcY(lastPos.y), calcX(objects.blobs[myBlob].next[i].x), calcY(objects.blobs[myBlob].next[i].y)], { stroke: 'rgba(200,200,200,1)', strokeWidth: 4 });
+                var line = new fabric.Line([calcX(lastPos.x), calcY(lastPos.y), calcX(objects.blobs[myBlob].next[i].x), calcY(objects.blobs[myBlob].next[i].y)], { stroke: 'rgba(227,14,17,0.4)', strokeWidth: 4 });
                 canvas.add(line);
+                line.moveTo(100);
                 objects.paths.push({line: line, start: lastPos, end: objects.blobs[myBlob].next[i]});
                 lastPos = objects.blobs[myBlob].next[i];
             }
@@ -210,7 +244,7 @@ function init(name){
     }
     var winWidth = $(window).width();
     var winHeight = $(window).height();
-    setInterval(function(){
+    var sInt = setInterval(function(){
         if(myBlob == null) return;
         var curBlob = objects.blobs[myBlob];
         socket.emit('game:change', {
@@ -225,19 +259,20 @@ function init(name){
             next: curBlob.next
         });
     }, opts.sendInterval);
-    setInterval(render, 1000/opts.fps);
+    var fInt = setInterval(render, 1000/opts.fps);
     function massDecay () {
         _.each(objects.blobs, function (blob) {
             if (blob.color != '#E30E11')
                 blob.radius = Math.max(5, blob.radius * opts.massDecayConstant); 
         });
     }
-    setInterval(massDecay, opts.massDecayInterval);
+    var mInt = setInterval(massDecay, opts.massDecayInterval);
     fabric.Object.prototype.transparentCorners = false;
     var ballsTriggered = false;
     $(window).resize(function(){
         win.height = $(window).height();
         win.width = $(window).width();
+        scoreboard.setTop(win.height - scoreboard.getHeight() - 20);
         canvas.setDimensions({width: win.width, height: win.height});
         _.each(objects.hLines, function(line){
           line.remove();
@@ -305,9 +340,15 @@ function init(name){
         console.warn("remove blob");
       if(data.attrs.id in objects.blobs){
         objects.blobs[data.attrs.id].blob.remove();
+        objects.blobs[data.attrs.id].text.remove();
         delete objects.blobs[data.attrs.id];
       }
     });
 }
 
-
+$(function(){
+    $('#start-button').click(function(){
+       $('#splash').hide();
+       init($('#name-input').val()); 
+    });
+});
