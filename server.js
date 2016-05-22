@@ -23,6 +23,11 @@ var grid = {
 	height: 250	
 };
 
+function randColor(){
+	var colors = [ '#1BDDE0', '#1B42E0', '#E0DA22', '#E0723A', '#E03AE0'];
+	return colors[Math.floor(Math.random()*colors.length)];
+}
+
 var totalFood = 0;
 
 var srcPath = __dirname;
@@ -50,8 +55,8 @@ var SpikeTimer = new Timer(2000, function () {
 	var spikeArray = spikes.toArray();
 	spikeArray.forEach(function (spike) {
 		spike.attrs.dest = {
-			x: Math.max(0, Math.min(1000, spike.attrs.position.x + Math.random()*10 - 5)), 
-			y: Math.max(0, Math.min(1000, spike.attrs.position.y + Math.random()*10 - 5))
+			x: Math.max(0, Math.min(1000, spike.attrs.position.x + Math.random()* 2 * (Constants.SPIKE_RANGE) - Constants.SPIKE_RANGE)), 
+			y: Math.max(0, Math.min(1000, spike.attrs.position.y + Math.random()* 2 * (Constants.SPIKE_RANGE) - Constants.SPIKE_RANGE))
 		};
 		data.push(spike);
 	});
@@ -67,13 +72,11 @@ var SpikeTimer = new Timer(2000, function () {
 
 var BlobTimer = new Timer(10000, function () {
 	if(food.toArray().length < Constants.MAX_FOOD && totalFood < Constants.MAX_TOTAL_FOOD){ //don't crash the damn site
-	console.log(totalFood);
-	console.log(Constants.MAX_TOTAL_FOOD);
 		var data = [];
 		for (var i = 0; i < Constants.NUM_OF_FOOD; i++) {
 			var x = Math.random() * (grid.width - 2 * Constants.FOOD_RADIUS) + Constants.FOOD_RADIUS;
 			var y = Math.random() * (grid.height - 2 * Constants.FOOD_RADIUS) + Constants.FOOD_RADIUS;
-			food = food.set(foodId, new Point({id: foodId, position: {x:x, y:y}, radius: Constants.FOOD_RADIUS, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x:x, y:y}, next: []}));
+			food = food.set(foodId, new Point({id: foodId, position: {x:x, y:y}, name: "", radius: Constants.FOOD_RADIUS, color: '#E30E11', step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x:x, y:y}, next: []}));
 			foodId++;
 			totalFood++;
 		}
@@ -96,10 +99,10 @@ io.on('connection', function (socket) {
 	});
 
 	socket.on('game:enter', function (data) {
-		var x = Math.round(Math.random() * (grid.width-20) + 10);
-		var y = Math.round(Math.random() * (grid.height-20) + 10);
-		var radius = 5;
-		var newBlob = new Point({id: socket.id, position: {x:x, y:y}, radius:radius, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x:x, y:y}, next: []});
+		var x = Math.round(Math.random() * (grid.width-2*Constants.BLOB_RADIUS) + Constants.BLOB_RADIUS);
+		var y = Math.round(Math.random() * (grid.height-2*Constants.BLOB_RADIUS) + Constants.BLOB_RADIUS);
+		var radius = Constants.BLOB_RADIUS;
+		var newBlob = new Point({id: socket.id, name: name, position: {x:x, y:y}, color: randColor(), radius:radius, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x:x, y:y}, next: []});
 		blobs = blobs.set(socket.id, newBlob);
 		socket.broadcast.emit('game:add-object', newBlob);
 		socket.emit('game:set-id', {id: socket.id});

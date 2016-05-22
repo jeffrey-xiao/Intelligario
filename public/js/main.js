@@ -6,9 +6,12 @@ var opts = {
     speedFactor: 90,
     spikeTime: 2,
     sendInterval: 2000,
-    reconsiderInterval: 500
+    reconsiderInterval: 500,
+    minDist: 5,
+    massDecayInterval: 2000,
+    massDecayConstant: 0.99
 };
-function init(){
+function init(name){
     var win = {
       height: 0,
       width: 0
@@ -29,7 +32,7 @@ function init(){
     function createBlob(id, blobData){
         if(id in objects.blobs) return;
         blobData.blob = new fabric.Circle({
-            fill: 'rgba(255,0,0,1)',    
+            fill: blobData.color,    
             radius: blobData.radius
         });
         canvas.add(blobData.blob);
@@ -52,21 +55,39 @@ function init(){
           objects.vLines[i].set({x1: l, x2: l});
           objects.vLines[i].setCoords();
         }
+        var term = false;
         _.each(objects.blobs, function(curBlob){
+            if(curBlob == null) return;
             curBlob.blob.setRadius(pix(curBlob.radius));
             curBlob.blob.setLeft(pix(curBlob.position.x - curBlob.radius - camera.x) + win.width/2);
             curBlob.blob.setTop(pix(curBlob.position.y - curBlob.radius - camera.y) + win.height/2);
             curBlob.stepCount++;
+            if(curBlob.id == myBlob){ //check spikes
+                _.each(objects.spikes, function(spike){
+                    if(spike == null) return;
+                    var dx = spike.position.x - curBlob.position.x;
+                    var dy = spike.position.y - curBlob.position.y;
+                    var dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist <= Math.max(spike.radius, curBlob.radius)){
+                        socket.emit('game:remove', {id: curBlob.id});
+                        objects.blobs[curBlob.id].blob.remove();
+                        delete objects.blobs[curBlob.id];
+                        term = true;
+                        return;
+                    }
+                });
+            }
+            if(term) return;
             if(curBlob.stepCount > curBlob.steps){
                 curBlob.position = curBlob.dest;
                 curBlob.stepCount = 0;
                 curBlob.step = {x: 0, y: 0};
-                var term = false;
                 _.each(objects.blobs, function(eatBlob){
+                    if(eatBlob == null) return;
                     if(eatBlob.id != curBlob.id){
                         var dx = eatBlob.position.x - curBlob.position.x;
                         var dy = eatBlob.position.y - curBlob.position.y;
-                        var dist = dx*dx + dy*dy;
+                        var dist = Math.sqrt(dx*dx + dy*dy);
                         if(dist <= Math.max(eatBlob.radius, curBlob.radius)){
                             if(eatBlob.radius > curBlob.radius + 1){
                                 socket.emit('game:remove', {id: curBlob.id});
@@ -79,7 +100,8 @@ function init(){
                                     stepCount: eatBlob.stepCount, 
                                     steps: eatBlob.steps, 
                                     dest: eatBlob.dest, 
-                                    next: eatBlob.next
+                                    next: eatBlob.next,
+                                    name: curBlob.name
                                 });
                                 objects.blobs[curBlob.id].blob.remove();
                                 delete objects.blobs[curBlob.id];
@@ -95,6 +117,7 @@ function init(){
                                     step: curBlob.step, 
                                     stepCount: curBlob.stepCount, 
                                     steps: curBlob.steps, 
+                                    name: curBlob.name,
                                     dest: curBlob.dest, 
                                     next: curBlob.next
                                 });
@@ -120,7 +143,8 @@ function init(){
                             position: curBlob.position, 
                             radius: curBlob.radius, 
                             step: curBlob.step, 
-                            stepCount: curBlob.stepCount, 
+                            stepCount: curBlob.stepCount,
+                            name: curBlob.name, 
                             steps: curBlob.steps, 
                             dest: curBlob.dest, 
                             next: curBlob.next
@@ -153,8 +177,8 @@ function init(){
     }
     worker.addEventListener('message', function(e){
         var ret = JSON.parse(e.data);
-        objects.blobs[myBlob].dest = objects.blobs[myBlob].position;
         if(ret.length > 0){
+            objects.blobs[myBlob].dest = objects.blobs[myBlob].position;
             objects.blobs[myBlob].next = ret;
             objects.blobs[myBlob].steps = 0;
             objects.blobs[myBlob].stepCount = 0;
@@ -197,10 +221,18 @@ function init(){
             stepCount: curBlob.stepCount, 
             steps: curBlob.steps, 
             dest: curBlob.dest, 
+            name: curBlob.name,
             next: curBlob.next
         });
     }, opts.sendInterval);
     setInterval(render, 1000/opts.fps);
+    function massDecay () {
+        _.each(objects.blobs, function (blob) {
+            if (blob.color != '#E30E11')
+                blob.radius = Math.max(5, blob.radius * opts.massDecayConstant); 
+        });
+    }
+    setInterval(massDecay, opts.massDecayInterval);
     fabric.Object.prototype.transparentCorners = false;
     var ballsTriggered = false;
     $(window).resize(function(){
@@ -229,10 +261,10 @@ function init(){
           objects.vLines.push(line);
         }*/
     });
-    socket.emit('game:enter', {clientId: Math.round(Math.random()*10000)});
+    socket.emit('game:enter', {clientId: Math.round(Math.random()*10000), name: name});
     socket.on('game:add-object', function (data) {
         console.warn("add object");
-      createBlob(data.attrs.id, data.attrs);
+        createBlob(data.attrs.id, data.attrs);
     });
     socket.on('game:change-spikes', function (data) {
         console.warn("change spikes");
@@ -278,4 +310,4 @@ function init(){
     });
 }
 
-$(init);
+

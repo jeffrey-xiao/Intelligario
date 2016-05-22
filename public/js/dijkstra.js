@@ -1,7 +1,39 @@
 importScripts('underscore.js');
 importScripts('priority-queue.min.js');
 self.addEventListener('message', function(e){
+    
     var data = JSON.parse(e.data);
+    
+    var sums = [0, 0];
+    var currBlob = data.objects.blobs[data.myBlob];
+    _.each(data.objects.blobs, function(blob){
+        if(blob == null) return;
+        if(blob.id == currBlob.id || blob.radius < currBlob.radius+1) return;
+        var dy = blob.position.y - currBlob.position.y;
+        var dx = blob.position.x - currBlob.position.x;
+        var dist = Math.sqrt(dy*dy+dx*dx) - currBlob.radius - blob.radius;
+        if(dist < data.opts.minDist - 1){
+            sums[0] += data.opts.minDist - dx;
+            sums[1] += data.opts.minDist - dy;
+        }
+    });
+    _.each(data.objects.spikes, function(spike){
+        if(spike.id == currBlob.id) return;
+        var dy = spike.position.y - currBlob.position.y;
+        var dx = spike.position.x - currBlob.position.x;
+        var dist = Math.sqrt(dy*dy+dx*dx) - currBlob.radius - spike.radius;
+        if(dist < data.opts.minDist - 1){
+            sums[0] += data.opts.minDist - dx;
+            sums[1] += data.opts.minDist - dy;
+        }
+    });
+    if(sums[0] != 0 || sums[1] != 0){
+        console.error("Freak!");
+        var newPos = [{x: currBlob.position.x + sums[0], y: currBlob.position.y + sums[1]}];
+        self.postMessage(JSON.stringify(newPos));
+        return; 
+    }
+    
     var cost = new Array(data.opts.height + 1);
     var prev = new Array(data.opts.height + 1);
     for(var i = 0; i <= data.opts.height; i++){
@@ -16,7 +48,6 @@ self.addEventListener('message', function(e){
             return a.cost - b.cost;
         }
     });
-    var currBlob = data.objects.blobs[data.myBlob];
     var roundedPositions = {
         x: Math.round(currBlob.position.x),  
         y: Math.round(currBlob.position.y)
@@ -24,7 +55,6 @@ self.addEventListener('message', function(e){
     pq.queue({x: roundedPositions.x, y: roundedPositions.y, cost: 0});
     cost[roundedPositions.x][roundedPositions.y] = 0;
     prev[roundedPositions.x][roundedPositions.y] = {x: -1, y: -1};
-    
     var endX = -1;
     var endY = -1;
     var cnt = 0;
@@ -73,7 +103,7 @@ self.addEventListener('message', function(e){
                 _.each(data.objects.spikes, function(spike){
                     var dx = (spike.position.x - next.x);
                     var dy = (spike.position.y - next.y);
-                    if (Math.sqrt(dx * dx + dy * dy) - spike.radius - currBlob.radius <= 5) {
+                    if (Math.sqrt(dx * dx + dy * dy) - spike.radius - currBlob.radius <= data.opts.minDist) {
                         valid = false;
                         return;
                     }
@@ -82,7 +112,7 @@ self.addEventListener('message', function(e){
                 _.each(data.objects.blobs, function(blob){
                     var dx = (blob.position.x - next.x);
                     var dy = (blob.position.y - next.y);
-                    if (blob.radius > currBlob.radius && Math.sqrt(dx * dx + dy * dy) - blob.radius - currBlob.radius <= 5) {
+                    if (blob.radius > currBlob.radius && Math.sqrt(dx * dx + dy * dy) - blob.radius - currBlob.radius <= data.opts.minDist) {
                         valid = false;
                         return;
                     }
