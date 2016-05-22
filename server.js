@@ -18,6 +18,11 @@ var List = Immutable.List;
 var hostname = 'localhost';
 var port = 8080;
 
+var grid = {
+	width: 500,
+	height: 500	
+};
+
 var srcPath = __dirname;
 var destPath = __dirname;
 
@@ -30,11 +35,9 @@ var spikeId = 0;
 var blobId = 0;
 
 for (var i = 0; i < Constants.NUM_OF_SPIKES; i++) {
-	var x = Math.random() * 980 + 10;
-	var y = Math.random() * 980 + 10;
-	var radius = 10;
-
-	spikes = spikes.set(spikeId, new Point(spikeId, x, y, radius, Constants.SPIKE));
+	var x = Math.random() * (grid.width-20) + 10;
+	var y = Math.random() * (grid.height-20) + 10;
+	spikes = spikes.set(spikeId, new Point({id: spikeId, position: {x:x, y:y}, radius: 2.5}));
 	spikeId++;
 }
 
@@ -43,20 +46,21 @@ var SpikeTimer = new Timer(2000, function () {
 
 	var spikeArray = spikes.toArray();
 	spikeArray.forEach(function (spike) {
-		var newX = Math.random() * 1000;
-		var newY = Math.random() * 1000;
-		data.push({spike: spike, newX: newX, newY: newY});
+		spike.attrs.dest = {
+			x: Math.max(0, Math.min(1000, spike.attrs.position.x + Math.random()*10 - 5)), 
+			y: Math.max(0, Math.min(1000, spike.attrs.position.y + Math.random()*10 - 5))
+		};
+		data.push(spike);
 	});
 	
+	io.sockets.emit('game:change-spikes', data);
 	for (var i = 0; i < data.length; i++) {
-		spikes = spikes.updateIn([data[i].spike.getId()], function (spike) {
-			spike.setX(data[i].newX);
-			spike.setY(data[i].newY);
+		spikes = spikes.updateIn([data[i].attrs.id], function (spike) {
+			spike.attrs.position = data[i].attrs.dest;
 			return spike;
 		});
 	}
 
-	io.sockets.emit('game:change-spikes', {data: data});
 });
 
 SpikeTimer.start();
@@ -67,33 +71,28 @@ io.on('connection', function (socket) {
 	socket.on('disconnect', function () {
 		blobs = blobs.removeIn([socket.id]);
 
-		io.emit('game:remove-blob', {id: socket.id});
+		io.emit('game:remove-blob', {attrs: {id: socket.id}});
 	});
 
 	socket.on('game:enter', function (data) {
-		var x = Math.round(Math.random() * 20 + 10);
-		var y = Math.round(Math.random() * 20 + 10);
-		var radius = 10;
-		var newBlob = new Point(socket.id, x, y, radius, Constants.BLOB);
+		var x = Math.round(Math.random() * (grid.width-20) + 10);
+		var y = Math.round(Math.random() * (grid.height-20) + 10);
+		var radius = 5;
+		var newBlob = new Point({id: socket.id, position: {x:x, y:y}, radius:radius, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x:x, y:y}, next: []});
 		blobs = blobs.set(socket.id, newBlob);
-		socket.broadcast.emit('game:add-object', {x: x, y: y, radius: radius, id: socket.id});
+		socket.broadcast.emit('game:add-object', newBlob);
 		socket.emit('game:set-id', {id: socket.id});
-		var objects = [];
 		var myList = blobs.toArray();
-		for(var i = 0; i < myList.length; i++){
-			objects.push({x: myList[i].getX(), y: myList[i].getY(), radius: myList[i].getRadius(), id: myList[i].getId()});
-		}
-		socket.emit('game:add-objects', objects);
+		socket.emit('game:add-objects', myList);
 	});
 
 	socket.on('game:change', function (data) {
 		blobs = blobs.update(data.id, function (blob) {
-			blob.setX(data.position.x);
-			blob.setY(data.position.y);
+			blob.attrs = data;
 			return blob;
 		});
 
-		socket.broadcast.emit('game:change-blob', data);
+		socket.broadcast.emit('game:change-blob', {attrs: data});
 	});
 });
 

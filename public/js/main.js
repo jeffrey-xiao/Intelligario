@@ -1,9 +1,10 @@
 var opts = {
-    height: 100,
-    width: 100,
-    horCount: 50,
-    fps: 30,
-    speedFactor: 100
+    height: 500,
+    width: 500,
+    horCount: 500,
+    fps: 60,
+    speedFactor: 70,
+    spikeTime: 2
 };
 function init(){
     var win = {
@@ -14,8 +15,8 @@ function init(){
     var myBlob = null;
     var canvas = new fabric.StaticCanvas('game');
     var objects = {
-        blobs: {}, //{blob, position: {x, y}, radius, step: {x, y}, stepCount, steps, dest: {x, y}, next: [{x, y},{x, y}]}
-        spikes: {},
+        blobs: {}, //{id, blob, position: {x, y}, radius, step: {x, y}, stepCount, steps, dest: {x, y}, next: [{x, y},{x, y}]}
+        spikes: {}, //{id, spike, position: {x, y}, new
         lines: {}
     };
     function pix(pos){
@@ -80,6 +81,12 @@ function init(){
             curBlob.position.x += curBlob.step.x;
             curBlob.position.y += curBlob.step.y;
         });
+        _.each(objects.spikes, function(curSpike){
+            curSpike.spike.setLeft(pix(curSpike.position.x - curSpike.radius - camera.x) + win.width/2);
+            curSpike.spike.setTop(pix(curSpike.position.y - curSpike.radius - camera.y) + win.height/2);
+            curSpike.position.x += curSpike.step.x;
+            curSpike.position.y += curSpike.step.y;
+        });
         canvas.renderAll();
     }
     var winWidth = $(window).width();
@@ -99,7 +106,7 @@ function init(){
         objects.hLines = [];
         objects.vLines = [];
         opts.verCount = win.width/pix(1);
-        for(var i = 0; i < opts.horCount; i++){
+        /*for(var i = 0; i < opts.horCount; i++){
           var line = new fabric.Line([0,0,win.width,0], { stroke: 'rgba(200,200,200,1)', strokeWidth: 1 });
           canvas.add(line);
           line.moveTo(0);
@@ -110,31 +117,49 @@ function init(){
           canvas.add(line);
           line.moveTo(0);
           objects.vLines.push(line);
-        }
+        }*/
     });
     $(document).keydown(function(e) {
         objects.blobs[myBlob].next.push({x: 0, y: 0});
     });
     socket.emit('game:enter', {clientId: Math.round(Math.random()*10000)});
     socket.on('game:add-object', function (data) {
-      createBlob(data.id, {position: {x: data.x, y: data.y}, id: data.id, radius: data.radius, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x: data.x, y: data.y}, next: [], creator: data.creator});
+      createBlob(data.attrs.id, data.attrs);
+    });
+    socket.on('game:change-spikes', function (data) {
+        _.each(data, function(spike){
+            spike = spike.attrs;
+            console.log(spike);
+            spike.step = {x: (spike.dest.x - spike.position.x)/opts.spikeTime/opts.fps, y: (spike.dest.y - spike.position.y)/opts.spikeTime/opts.fps}; 
+            console.log(spike.step);
+            if(!(spike.id in objects.spikes)){
+                fabric.Image.fromURL('img/spike.png', function(img) {
+                    spike.spike = img;
+                    img.set({width: pix(spike.radius * 2), height: pix(spike.radius * 2)});
+                    canvas.add(img);
+                    objects.spikes[spike.id] = spike;
+                });
+            }else{
+                _.extend(objects.spikes[spike.id], spike);
+            }
+        });
     });
     socket.on('game:add-objects', function (blobs) {
         _.each(blobs, function(data){
-        createBlob(data.id, {position: {x: data.x, y: data.y}, id: data.id, radius: data.radius, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x: data.x, y: data.y}, next: [], creator: data.creator});
+            createBlob(data.attrs.id, data.attrs);
         });
         $(window).trigger('resize');
     });
     socket.on('game:change-blob', function (blob) {
-        _.extend(objects.blobs[blob.id], blob);
+        _.extend(objects.blobs[blob.attrs.id], blob.attrs);
     });
     socket.on('game:set-id', function (data) {
       myBlob = data.id;
     });
     socket.on('game:remove-blob', function (data) {
-      if(data.id in objects.blobs){
-        objects.blobs[data.id].blob.remove();
-        delete objects.blobs[data.id];
+      if(data.attrs.id in objects.blobs){
+        objects.blobs[data.attrs.id].blob.remove();
+        delete objects.blobs[data.attrs.id];
       }
     });
 }
