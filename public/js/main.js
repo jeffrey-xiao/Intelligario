@@ -55,7 +55,6 @@ function init(name){
         objects.blobs[id] = blobData;
     }
     function die(){
-        alert();
         clearInterval(mInt);
         clearInterval(fInt);
         clearInterval(sInt);
