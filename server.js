@@ -78,6 +78,7 @@ var BlobTimer = new Timer(10000, function () {
 });
 
 SpikeTimer.start();
+BlobTimer.start();
 
 io.on('connection', function (socket) {
 	console.log('a user has connected', socket.id);
