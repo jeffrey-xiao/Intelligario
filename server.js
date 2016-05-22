@@ -131,5 +131,4 @@ io.on('connection', function (socket) {
 app.use('/', express.static(__dirname + '/public/'));
 
 http.listen(app.get('port'), hostname, function () {
-	console.log("Server is listening on http://" + hostname + ":" + port);
 });
