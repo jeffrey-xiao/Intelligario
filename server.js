@@ -16,7 +16,8 @@ var Map = Immutable.Map;
 var List = Immutable.List;
 
 var hostname = 'localhost';
-var port = 8080;
+
+app.set('port', (process.env.PORT || 8080));
 
 var grid = {
 	width: 250,
@@ -129,6 +130,6 @@ io.on('connection', function (socket) {
 
 app.use('/', express.static(__dirname + '/public/'));
 
-http.listen(port, hostname, function () {
+http.listen(app.get('port'), hostname, function () {
 	console.log("Server is listening on http://" + hostname + ":" + port);
 });
