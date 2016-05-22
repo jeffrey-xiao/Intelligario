@@ -1,24 +1,27 @@
 var opts = {
-    height: 500,
-    width: 500,
+    height: 250,
+    width: 250,
     horCount: 100,
     fps: 60,
     speedFactor: 70,
     spikeTime: 2,
-    sendInterval: 2000
+    sendInterval: 2000,
+    reconsiderInterval: 500
 };
 function init(){
     var win = {
       height: 0,
       width: 0
     }
+    var worker = new Worker('js/dijkstra.js');
     var socket = io('/');
     var myBlob = null;
     var canvas = new fabric.StaticCanvas('game');
     var objects = {
         blobs: {}, //{id, blob, position: {x, y}, radius, step: {x, y}, stepCount, steps, dest: {x, y}, next: [{x, y},{x, y}]}
-        spikes: {}, //{id, spike, position: {x, y}, new
-        lines: {}
+        spikes: {}, //{id, spike, position: {x, y}
+        lines: {},
+        paths: []
     };
     function pix(pos){
         return Math.round(pos*($(window).width()/opts.horCount));
@@ -82,6 +85,18 @@ function init(){
             curBlob.position.x += curBlob.step.x;
             curBlob.position.y += curBlob.step.y;
         });
+        function calcX(pos){
+            return pix(pos - camera.x) + win.width/2;
+        }
+        function calcY(pos){
+            return pix(pos - camera.y) + win.height/2;
+        }
+        var lastPos = objects.paths[0];
+        for(var i = 1; i < objects.paths.length; i++){
+            var line = objects.paths[i].line.set({x1: calcX(objects.paths[i].start.x), y1: calcY(objects.paths[i].start.y), x2: calcX(objects.paths[i].end.x), y2: calcY(objects.paths[i].end.y)});
+            objects.paths[i].line.setCoords();
+            lastPos = objects.blobs[myBlob].next[i];
+        }
         _.each(objects.spikes, function(curSpike){
             curSpike.spike.setLeft(pix(curSpike.position.x - curSpike.radius - camera.x) + win.width/2);
             curSpike.spike.setTop(pix(curSpike.position.y - curSpike.radius - camera.y) + win.height/2);
@@ -89,6 +104,39 @@ function init(){
             curSpike.position.y += curSpike.step.y;
         });
         canvas.renderAll();
+    }
+    worker.addEventListener('message', function(e){
+        var ret = JSON.parse(e.data);
+        objects.blobs[myBlob].dest = objects.blobs[myBlob].position;
+        if(ret.length > 0){
+            objects.blobs[myBlob].next = ret;
+            objects.blobs[myBlob].steps = 0;
+            objects.blobs[myBlob].stepCount = 0;
+            for(var i = 0; i < objects.paths.length; i++){
+                objects.paths[i].line.remove();
+                delete objects.paths[i];
+            }
+            var camera = objects.blobs[myBlob].position;
+            function calcX(pos){
+                return pix(pos - camera.x) + win.width/2;
+            }
+            function calcY(pos){
+                return pix(pos - camera.y) + win.height/2;
+            }
+            objects.paths = [];
+            lastPos = objects.blobs[myBlob].position;
+            for(var i = 0; i < objects.blobs[myBlob].next.length; i++){
+                var line = new fabric.Line([calcX(lastPos.x), calcY(lastPos.y), calcX(objects.blobs[myBlob].next[i].x), calcY(objects.blobs[myBlob].next[i].y)], { stroke: 'rgba(200,200,200,1)', strokeWidth: 4 });
+                canvas.add(line);
+                objects.paths.push({line: line, start: lastPos, end: objects.blobs[myBlob].next[i]});
+                lastPos = objects.blobs[myBlob].next[i];
+            }
+        }
+        setTimeout(reconsider, 200);
+    });
+    function reconsider(){
+        console.log("RECONSIDERING");
+        worker.postMessage(JSON.stringify({objects: objects, opts: opts, myBlob: myBlob}));
     }
     var winWidth = $(window).width();
     var winHeight = $(window).height();
@@ -108,6 +156,7 @@ function init(){
     }, opts.sendInterval);
     setInterval(render, 1000/opts.fps);
     fabric.Object.prototype.transparentCorners = false;
+    var ballsTriggered = false;
     $(window).resize(function(){
         win.height = $(window).height();
         win.width = $(window).width();
@@ -134,19 +183,15 @@ function init(){
           objects.vLines.push(line);
         }*/
     });
-    $(document).keydown(function(e) {
-        objects.blobs[myBlob].next.push({x: 0, y: 0});
-    });
     socket.emit('game:enter', {clientId: Math.round(Math.random()*10000)});
     socket.on('game:add-object', function (data) {
+        console.log("ADDED OBJECT");
       createBlob(data.attrs.id, data.attrs);
     });
     socket.on('game:change-spikes', function (data) {
         _.each(data, function(spike){
             spike = spike.attrs;
-            console.log(spike);
             spike.step = {x: (spike.dest.x - spike.position.x)/opts.spikeTime/opts.fps, y: (spike.dest.y - spike.position.y)/opts.spikeTime/opts.fps}; 
-            console.log(spike.step);
             if(!(spike.id in objects.spikes)){
                 fabric.Image.fromURL('img/spike.png', function(img) {
                     spike.spike = img;
@@ -164,6 +209,10 @@ function init(){
             createBlob(data.attrs.id, data.attrs);
         });
         $(window).trigger('resize');
+        if(!ballsTriggered){
+            ballsTriggered = true;
+            reconsider();
+        }
     });
     socket.on('game:change-blob', function (blob) {
         _.extend(objects.blobs[blob.attrs.id], blob.attrs);

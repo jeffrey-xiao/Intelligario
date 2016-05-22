@@ -19,8 +19,8 @@ var hostname = 'localhost';
 var port = 8080;
 
 var grid = {
-	width: 500,
-	height: 500	
+	width: 250,
+	height: 250	
 };
 
 var srcPath = __dirname;
@@ -64,14 +64,15 @@ var SpikeTimer = new Timer(2000, function () {
 });
 
 var BlobTimer = new Timer(10000, function () {
-	var data = [];
-	for (var i = 0; i < Constants.NUM_OF_FOOD; i++) {
-		var x = Math.random() * (grid.width - 2 * Constants.FOOD_RADIUS) + Constants.FOOD_RADIUS;
-		var y = Math.random() * (grid.height - 2 * Constants.FOOD_RADIUS) + Constants.FOOD_RADIUS;
-		food = food.set(foodId, new Point({id: foodId, position: {x:x, y:y}, radius: Constants.FOOD_RADIUS, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x:x, y:y}, next: []}));
-		foodId++;
+	if(food.toArray().length < 200){ //don't crash the damn site
+		var data = [];
+		for (var i = 0; i < Constants.NUM_OF_FOOD; i++) {
+			var x = Math.random() * (grid.width - 2 * Constants.FOOD_RADIUS) + Constants.FOOD_RADIUS;
+			var y = Math.random() * (grid.height - 2 * Constants.FOOD_RADIUS) + Constants.FOOD_RADIUS;
+			food = food.set(foodId, new Point({id: foodId, position: {x:x, y:y}, radius: Constants.FOOD_RADIUS, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x:x, y:y}, next: []}));
+			foodId++;
+		}
 	}
-	
 	var foodArray = food.toArray();
 	
 	io.sockets.emit('game:add-objects', foodArray);
