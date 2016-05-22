@@ -3,7 +3,7 @@ var opts = {
     width: 250,
     horCount: 100,
     fps: 60,
-    speedFactor: 70,
+    speedFactor: 90,
     spikeTime: 2,
     sendInterval: 2000,
     reconsiderInterval: 500
@@ -27,6 +27,7 @@ function init(){
         return Math.round(pos*($(window).width()/opts.horCount));
     }
     function createBlob(id, blobData){
+        if(id in objects.blobs) return;
         blobData.blob = new fabric.Circle({
             fill: 'rgba(255,0,0,1)',    
             radius: blobData.radius
@@ -60,6 +61,51 @@ function init(){
                 curBlob.position = curBlob.dest;
                 curBlob.stepCount = 0;
                 curBlob.step = {x: 0, y: 0};
+                var term = false;
+                _.each(objects.blobs, function(eatBlob){
+                    if(eatBlob.id != curBlob.id){
+                        var dx = eatBlob.position.x - curBlob.position.x;
+                        var dy = eatBlob.position.y - curBlob.position.y;
+                        var dist = dx*dx + dy*dy;
+                        if(dist <= Math.max(eatBlob.radius, curBlob.radius)){
+                            if(eatBlob.radius > curBlob.radius + 1){
+                                socket.emit('game:remove', {id: curBlob.id});
+                                eatBlob.radius = Math.sqrt((eatBlob.radius * eatBlob.radius)+(curBlob.radius*curBlob.radius));
+                                socket.emit('game:change', {
+                                    id: eatBlob.id,
+                                    position: eatBlob.position, 
+                                    radius: eatBlob.radius, 
+                                    step: eatBlob.step, 
+                                    stepCount: eatBlob.stepCount, 
+                                    steps: eatBlob.steps, 
+                                    dest: eatBlob.dest, 
+                                    next: eatBlob.next
+                                });
+                                objects.blobs[curBlob.id].blob.remove();
+                                delete objects.blobs[curBlob.id];
+                                term = true;
+                                return;
+                            }else if(curBlob.radius > eatBlob.radius + 1){
+                                socket.emit('game:remove', {id: eatBlob.id});
+                                curBlob.radius = Math.sqrt((curBlob.radius * curBlob.radius)+(eatBlob.radius*eatBlob.radius));
+                                socket.emit('game:change', {
+                                    id: curBlob.id,
+                                    position: curBlob.position, 
+                                    radius: curBlob.radius, 
+                                    step: curBlob.step, 
+                                    stepCount: curBlob.stepCount, 
+                                    steps: curBlob.steps, 
+                                    dest: curBlob.dest, 
+                                    next: curBlob.next
+                                });
+                                objects.blobs[eatBlob.id].blob.remove();
+                                delete objects.blobs[eatBlob.id];
+                                return;
+                            }
+                        }
+                    } 
+                });
+                if(term) return;
                 if(curBlob.next.length > 0){
                     curBlob.dest = curBlob.next[0];
                     var dx = (curBlob.dest.x - curBlob.position.x);
@@ -185,10 +231,11 @@ function init(){
     });
     socket.emit('game:enter', {clientId: Math.round(Math.random()*10000)});
     socket.on('game:add-object', function (data) {
-        console.log("ADDED OBJECT");
+        console.warn("add object");
       createBlob(data.attrs.id, data.attrs);
     });
     socket.on('game:change-spikes', function (data) {
+        console.warn("change spikes");
         _.each(data, function(spike){
             spike = spike.attrs;
             spike.step = {x: (spike.dest.x - spike.position.x)/opts.spikeTime/opts.fps, y: (spike.dest.y - spike.position.y)/opts.spikeTime/opts.fps}; 
@@ -208,19 +255,22 @@ function init(){
         _.each(blobs, function(data){
             createBlob(data.attrs.id, data.attrs);
         });
-        $(window).trigger('resize');
         if(!ballsTriggered){
+            $(window).trigger('resize');
             ballsTriggered = true;
             reconsider();
         }
     });
     socket.on('game:change-blob', function (blob) {
+        console.warn("change blob");
         _.extend(objects.blobs[blob.attrs.id], blob.attrs);
     });
     socket.on('game:set-id', function (data) {
+        console.warn("set id");
       myBlob = data.id;
     });
     socket.on('game:remove-blob', function (data) {
+        console.warn("remove blob");
       if(data.attrs.id in objects.blobs){
         objects.blobs[data.attrs.id].blob.remove();
         delete objects.blobs[data.attrs.id];

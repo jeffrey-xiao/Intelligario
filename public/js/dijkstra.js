@@ -38,7 +38,7 @@ self.addEventListener('message', function(e){
         var found = false;
         var count = 0;
         _.each(data.objects.blobs, function (blob) {
-            if (Math.round(blob.position.x) == curr.x && Math.round(blob.position.y) == curr.y && /*blob.radius < currBlob.radius && */blob.id != currBlob.id) {
+            if (Math.round(blob.position.x) == curr.x && Math.round(blob.position.y) == curr.y && blob.radius + 1 < currBlob.radius && blob.id != currBlob.id) {
                 bId = blob.id;
                 found = true;
                 endX = curr.x;
@@ -82,7 +82,7 @@ self.addEventListener('message', function(e){
                 _.each(data.objects.blobs, function(blob){
                     var dx = (blob.position.x - next.x);
                     var dy = (blob.position.y - next.y);
-                    if (blob.radius > currBlob.radius && Math.sqrt(dx * dx + dy * dy) - blob.radius - currBlob.radius <= 1) {
+                    if (blob.radius > currBlob.radius && Math.sqrt(dx * dx + dy * dy) - blob.radius - currBlob.radius <= 5) {
                         valid = false;
                         return;
                     }

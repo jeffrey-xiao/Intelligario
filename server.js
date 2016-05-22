@@ -23,6 +23,8 @@ var grid = {
 	height: 250	
 };
 
+var totalFood = 0;
+
 var srcPath = __dirname;
 var destPath = __dirname;
 
@@ -64,13 +66,16 @@ var SpikeTimer = new Timer(2000, function () {
 });
 
 var BlobTimer = new Timer(10000, function () {
-	if(food.toArray().length < 200){ //don't crash the damn site
+	if(food.toArray().length < Constants.MAX_FOOD && totalFood < Constants.MAX_TOTAL_FOOD){ //don't crash the damn site
+	console.log(totalFood);
+	console.log(Constants.MAX_TOTAL_FOOD);
 		var data = [];
 		for (var i = 0; i < Constants.NUM_OF_FOOD; i++) {
 			var x = Math.random() * (grid.width - 2 * Constants.FOOD_RADIUS) + Constants.FOOD_RADIUS;
 			var y = Math.random() * (grid.height - 2 * Constants.FOOD_RADIUS) + Constants.FOOD_RADIUS;
 			food = food.set(foodId, new Point({id: foodId, position: {x:x, y:y}, radius: Constants.FOOD_RADIUS, step: {x: 0, y: 0}, stepCount: 0, steps: 0, dest: {x:x, y:y}, next: []}));
 			foodId++;
+			totalFood++;
 		}
 	}
 	var foodArray = food.toArray();
@@ -100,6 +105,13 @@ io.on('connection', function (socket) {
 		socket.emit('game:set-id', {id: socket.id});
 		var myList = blobs.toArray();
 		socket.emit('game:add-objects', myList);
+	});
+	
+	socket.on('game:remove', function (data) {
+		blobs = blobs.removeIn([data.id]);
+		food = food.removeIn([data.id]);
+		socket.broadcast.emit('game:remove-blob', {attrs: {id: data.id}});
+		
 	});
 
 	socket.on('game:change', function (data) {
