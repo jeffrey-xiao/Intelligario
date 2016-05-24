@@ -100,6 +100,8 @@ io.on('connection', function (socket) {
 	});
 
 	socket.on('game:enter', function (data) {
+		data.name = data.name.replace(/\W/g, '');
+		if(data.name.length > 10) str = str.substring(0, 10);
 		var x = Math.round(Math.random() * (grid.width-2*Constants.BLOB_RADIUS) + Constants.BLOB_RADIUS);
 		var y = Math.round(Math.random() * (grid.height-2*Constants.BLOB_RADIUS) + Constants.BLOB_RADIUS);
 		var radius = Constants.BLOB_RADIUS;
