@@ -5,7 +5,7 @@ var opts = {
     fps: 60,
     speedFactor: 90,
     spikeTime: 2,
-    sendInterval: 2000,
+    sendInterval: 500,
     reconsiderInterval: 500,
     minDist: 5,
     massDecayInterval: 2000,
